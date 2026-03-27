@@ -1,0 +1,135 @@
+﻿using Skillin.Data;
+using Skillin.DTOs;
+using Skillin.Entities;
+using Microsoft.EntityFrameworkCore;
+
+namespace Skillin.Services;
+
+public class ApplicationService
+{
+    private readonly AppDbContext _context;
+
+    public ApplicationService(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<List<ApplicationResponse>> GetByStudentAsync(Guid userId)
+    {
+        var student = await _context.StudentProfiles
+            .FirstOrDefaultAsync(s => s.UserId == userId);
+
+        if (student is null) return new List<ApplicationResponse>();
+
+        return await _context.Applications
+            .Include(a => a.Listing).ThenInclude(l => l.CompanyProfile)
+            .Include(a => a.StudentProfile)
+            .Where(a => a.StudentProfileId == student.Id)
+            .OrderByDescending(a => a.AppliedAt)
+            .Select(a => MapToResponse(a))
+            .ToListAsync();
+    }
+
+    public async Task<List<ApplicationResponse>> GetByListingAsync(Guid listingId, Guid userId)
+    {
+        var listing = await _context.Listings
+            .Include(l => l.CompanyProfile)
+            .FirstOrDefaultAsync(l => l.Id == listingId);
+
+        if (listing is null || listing.CompanyProfile.UserId != userId)
+            return new List<ApplicationResponse>();
+
+        return await _context.Applications
+            .Include(a => a.Listing).ThenInclude(l => l.CompanyProfile)
+            .Include(a => a.StudentProfile)
+            .Where(a => a.ListingId == listingId)
+            .OrderByDescending(a => a.AppliedAt)
+            .Select(a => MapToResponse(a))
+            .ToListAsync();
+    }
+
+    public async Task<(bool Success, string Message, ApplicationResponse? Data)> ApplyAsync(Guid userId, CreateApplicationRequest request)
+    {
+        var student = await _context.StudentProfiles
+            .FirstOrDefaultAsync(s => s.UserId == userId);
+
+        if (student is null)
+            return (false, "Create a student profile first.", null);
+
+        var listing = await _context.Listings.FindAsync(request.ListingId);
+        if (listing is null)
+            return (false, "Listing not found.", null);
+
+        if (!listing.IsActive)
+            return (false, "This listing is no longer active.", null);
+
+        var alreadyApplied = await _context.Applications
+            .AnyAsync(a => a.ListingId == request.ListingId && a.StudentProfileId == student.Id);
+
+        if (alreadyApplied)
+            return (false, "You have already applied to this listing.", null);
+
+        var application = new Application
+        {
+            ListingId = request.ListingId,
+            StudentProfileId = student.Id,
+            CoverLetter = request.CoverLetter
+        };
+
+        _context.Applications.Add(application);
+        await _context.SaveChangesAsync();
+
+        var created = await _context.Applications
+            .Include(a => a.Listing).ThenInclude(l => l.CompanyProfile)
+            .Include(a => a.StudentProfile)
+            .FirstAsync(a => a.Id == application.Id);
+
+        return (true, "Application submitted.", MapToResponse(created));
+    }
+
+    public async Task<(bool Success, string Message, ApplicationResponse? Data)> UpdateStatusAsync(Guid id, Guid userId, UpdateApplicationStatusRequest request)
+    {
+        var application = await _context.Applications
+            .Include(a => a.Listing).ThenInclude(l => l.CompanyProfile)
+            .Include(a => a.StudentProfile)
+            .FirstOrDefaultAsync(a => a.Id == id);
+
+        if (application is null) return (false, "Application not found.", null);
+        if (application.Listing.CompanyProfile.UserId != userId)
+            return (false, "Access denied.", null);
+
+        application.Status = request.Status;
+        await _context.SaveChangesAsync();
+
+        return (true, "Status updated.", MapToResponse(application));
+    }
+
+    public async Task<(bool Success, string Message)> WithdrawAsync(Guid id, Guid userId)
+    {
+        var student = await _context.StudentProfiles
+            .FirstOrDefaultAsync(s => s.UserId == userId);
+
+        if (student is null) return (false, "Student profile not found.");
+
+        var application = await _context.Applications.FindAsync(id);
+        if (application is null) return (false, "Application not found.");
+        if (application.StudentProfileId != student.Id) return (false, "Access denied.");
+
+        _context.Applications.Remove(application);
+        await _context.SaveChangesAsync();
+        return (true, "Application withdrawn.");
+    }
+
+    private static ApplicationResponse MapToResponse(Application a) => new()
+    {
+        Id = a.Id,
+        ListingId = a.ListingId,
+        ListingTitle = a.Listing?.Title ?? "",
+        CompanyName = a.Listing?.CompanyProfile?.CompanyName ?? "",
+        StudentProfileId = a.StudentProfileId,
+        StudentName = a.StudentProfile?.FullName ?? "",
+        CoverLetter = a.CoverLetter,
+        Status = a.Status.ToString(),
+        AppliedAt = a.AppliedAt
+    };
+}
