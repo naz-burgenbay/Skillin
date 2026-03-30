@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "Skillin.API": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:22791;http://localhost:22792"
+    }
+  }
+}
