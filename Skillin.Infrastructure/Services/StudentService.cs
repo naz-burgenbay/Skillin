@@ -3,7 +3,7 @@ using Skillin.Application.DTOs;
 using Skillin.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace Skillin.Services;
+namespace Skillin.Infrastructure.Services;
 
 public class StudentService
 {
@@ -27,7 +27,6 @@ public class StudentService
         var profile = await _context.StudentProfiles
             .Include(s => s.User)
             .FirstOrDefaultAsync(s => s.Id == id);
-
         return profile is null ? null : MapToResponse(profile);
     }
 
@@ -36,7 +35,6 @@ public class StudentService
         var profile = await _context.StudentProfiles
             .Include(s => s.User)
             .FirstOrDefaultAsync(s => s.UserId == userId);
-
         return profile is null ? null : MapToResponse(profile);
     }
 
@@ -51,7 +49,8 @@ public class StudentService
             UserId = userId,
             FullName = request.FullName,
             Bio = request.Bio,
-            Skills = request.Skills
+            Skills = request.Skills,
+            UniversityName = request.UniversityName
         };
 
         _context.StudentProfiles.Add(profile);
@@ -76,6 +75,7 @@ public class StudentService
         profile.FullName = request.FullName;
         profile.Bio = request.Bio;
         profile.Skills = request.Skills;
+        profile.UniversityName = request.UniversityName;
 
         await _context.SaveChangesAsync();
         return (true, "Profile updated.", MapToResponse(profile));
@@ -100,6 +100,7 @@ public class StudentService
         FullName = s.FullName,
         Bio = s.Bio,
         Skills = s.Skills,
+        UniversityName = s.UniversityName,
         CreatedAt = s.CreatedAt
     };
 }
