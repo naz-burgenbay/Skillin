@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Skillin.Application.DTOs;
-using Skillin.Services;
+using Skillin.Infrastructure.Services;
 
 namespace Skillin.Controllers;
 
