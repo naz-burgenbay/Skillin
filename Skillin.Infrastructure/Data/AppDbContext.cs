@@ -45,6 +45,12 @@ public class AppDbContext : DbContext
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<JobApplication>()
+            .HasOne(a => a.StudentProfile)
+            .WithMany(s => s.Applications)
+            .HasForeignKey(a => a.StudentProfileId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        modelBuilder.Entity<JobApplication>()
             .HasIndex(a => new { a.ListingId, a.StudentProfileId })
             .IsUnique();
     }
