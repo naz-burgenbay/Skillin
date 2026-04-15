@@ -17,28 +17,19 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-
-          {/* Landing */}
           <Route path="/" element={<Landing />} />
-
-          {/* Public */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* All logged in */}
           <Route path="/home" element={
             <PrivateRoute><Home /></PrivateRoute>
           } />
           <Route path="/listings" element={
             <PrivateRoute><Listings /></PrivateRoute>
           } />
-
-          {/* Student */}
           <Route path="/profile/student" element={
             <PrivateRoute><StudentProfile /></PrivateRoute>
           } />
-
-          {/* Company */}
           <Route path="/profile/company" element={
             <PrivateRoute><CompanyProfile /></PrivateRoute>
           } />
@@ -50,7 +41,6 @@ function App() {
           } />
 
           <Route path="*" element={<Navigate to="/" />} />
-
         </Routes>
       </BrowserRouter>
     </AuthProvider>
