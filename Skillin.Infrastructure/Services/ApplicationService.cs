@@ -25,7 +25,7 @@ public class ApplicationService : IApplicationService
 
         return await _context.Applications
             .Include(a => a.Listing).ThenInclude(l => l.CompanyProfile)
-            .Include(a => a.StudentProfile)
+            .Include(a => a.StudentProfile).ThenInclude(s => s.User)
             .Where(a => a.StudentProfileId == student.Id)
             .OrderByDescending(a => a.AppliedAt)
             .Select(a => MapToResponse(a))
@@ -43,8 +43,29 @@ public class ApplicationService : IApplicationService
 
         return await _context.Applications
             .Include(a => a.Listing).ThenInclude(l => l.CompanyProfile)
-            .Include(a => a.StudentProfile)
+            .Include(a => a.StudentProfile).ThenInclude(s => s.User)
             .Where(a => a.ListingId == listingId)
+            .OrderByDescending(a => a.AppliedAt)
+            .Select(a => MapToResponse(a))
+            .ToListAsync();
+    }
+
+    public async Task<List<ApplicationResponse>> GetByCompanyAsync(Guid userId)
+    {
+        var company = await _context.CompanyProfiles
+            .FirstOrDefaultAsync(c => c.UserId == userId);
+
+        if (company is null) return new List<ApplicationResponse>();
+
+        var listingIds = await _context.Listings
+            .Where(l => l.CompanyProfileId == company.Id)
+            .Select(l => l.Id)
+            .ToListAsync();
+
+        return await _context.Applications
+            .Include(a => a.Listing).ThenInclude(l => l.CompanyProfile)
+            .Include(a => a.StudentProfile).ThenInclude(s => s.User)
+            .Where(a => listingIds.Contains(a.ListingId))
             .OrderByDescending(a => a.AppliedAt)
             .Select(a => MapToResponse(a))
             .ToListAsync();
@@ -83,7 +104,7 @@ public class ApplicationService : IApplicationService
 
         var created = await _context.Applications
             .Include(a => a.Listing).ThenInclude(l => l.CompanyProfile)
-            .Include(a => a.StudentProfile)
+            .Include(a => a.StudentProfile).ThenInclude(s => s.User)
             .FirstAsync(a => a.Id == application.Id);
 
         return (true, "Application submitted.", MapToResponse(created));
@@ -93,7 +114,7 @@ public class ApplicationService : IApplicationService
     {
         var application = await _context.Applications
             .Include(a => a.Listing).ThenInclude(l => l.CompanyProfile)
-            .Include(a => a.StudentProfile)
+            .Include(a => a.StudentProfile).ThenInclude(s => s.User)
             .FirstOrDefaultAsync(a => a.Id == id);
 
         if (application is null) return (false, "Application not found.", null);
@@ -130,6 +151,7 @@ public class ApplicationService : IApplicationService
         CompanyName = a.Listing?.CompanyProfile?.CompanyName ?? "",
         StudentProfileId = a.StudentProfileId,
         StudentName = a.StudentProfile?.FullName ?? "",
+        StudentEmail = a.StudentProfile?.User?.Email ?? "",
         CoverLetter = a.CoverLetter,
         Status = a.Status.ToString(),
         AppliedAt = a.AppliedAt
