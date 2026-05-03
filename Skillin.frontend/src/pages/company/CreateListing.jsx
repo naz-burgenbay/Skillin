@@ -1,13 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../api/axiosInstance';
 import { Navbar, Footer } from '../../components/Layout';
 
 const CreateListing = () => {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ title: '', description: '', location: '', position: '' });
+  const [form, setForm] = useState({ title: '', description: '', location: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [profileMissing, setProfileMissing] = useState(false);
+
+  useEffect(() => {
+    axiosInstance.get('/companies/me')
+      .catch(() => setProfileMissing(true));
+  }, []);
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -16,8 +22,8 @@ const CreateListing = () => {
     try {
       await axiosInstance.post('/listings', form);
       navigate('/home');
-    } catch {
-      setError('Failed to create listing.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create listing.');
     } finally {
       setLoading(false);
     }
@@ -45,6 +51,11 @@ const CreateListing = () => {
       <div style={{ maxWidth: 800, margin: '48px auto', padding: '0 64px' }}>
         <div style={{ background: 'white', borderRadius: 24, padding: 40, boxShadow: '0 4px 24px rgba(0,0,0,0.06)', border: '1px solid #f1f5f9' }}>
 
+          {profileMissing && (
+            <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 10, padding: '12px 16px', color: '#92400e', marginBottom: 24, fontSize: 14 }}>
+              You need to set up your <span style={{ fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate('/profile/company')}>company profile</span> before posting a listing.
+            </div>
+          )}
           {error && <div style={{ background: '#fff5f5', border: '1px solid #feb2b2', borderRadius: 10, padding: '12px 16px', color: '#c53030', marginBottom: 24, fontSize: 14 }}>{error}</div>}
 
           <form onSubmit={handleSubmit}>
@@ -54,14 +65,9 @@ const CreateListing = () => {
                 <input style={inputStyle} value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Frontend Developer Intern" required />
               </div>
               <div>
-                <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Position</label>
-                <input style={inputStyle} value={form.position} onChange={e => setForm({ ...form, position: e.target.value })} placeholder="Frontend, Backend, Design..." required />
+                <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Location</label>
+                <input style={inputStyle} value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} placeholder="Warsaw, Remote, New York..." required />
               </div>
-            </div>
-
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Location</label>
-              <input style={inputStyle} value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} placeholder="Warsaw, Remote, New York..." required />
             </div>
 
             <div style={{ marginBottom: 32 }}>
@@ -75,7 +81,7 @@ const CreateListing = () => {
             </div>
 
             <div style={{ display: 'flex', gap: 12 }}>
-              <button type="submit" disabled={loading} style={{ padding: '13px 40px', background: '#4f46e5', border: 'none', borderRadius: 10, color: 'white', fontSize: 15, fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>
+              <button type="submit" disabled={loading || profileMissing} style={{ padding: '13px 40px', background: '#4f46e5', border: 'none', borderRadius: 10, color: 'white', fontSize: 15, fontWeight: 700, cursor: 'pointer', opacity: (loading || profileMissing) ? 0.5 : 1 }}>
                 {loading ? 'Publishing...' : 'Publish Listing'}
               </button>
               <button type="button" onClick={() => navigate('/home')} style={{ padding: '13px 40px', background: '#f8faff', border: '1.5px solid #e5e7eb', borderRadius: 10, color: '#374151', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
