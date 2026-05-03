@@ -28,6 +28,14 @@ public class ApplicationsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet]
+    [Authorize(Roles = "Company")]
+    public async Task<IActionResult> GetAll()
+    {
+        var result = await _applicationService.GetByCompanyAsync(GetUserId());
+        return Ok(result);
+    }
+
     [HttpGet("listing/{listingId:guid}")]
     [Authorize(Roles = "Company")]
     public async Task<IActionResult> GetByListing(Guid listingId)

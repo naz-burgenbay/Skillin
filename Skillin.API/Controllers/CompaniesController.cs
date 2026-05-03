@@ -44,6 +44,15 @@ public class CompaniesController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPut("me")]
+    [Authorize(Roles = "Company")]
+    public async Task<IActionResult> UpdateMine([FromBody] UpdateCompanyProfileRequest request)
+    {
+        var result = await _companyService.UpdateByUserIdAsync(GetUserId(), request);
+        if (!result.Success) return BadRequest(new { message = result.Message });
+        return Ok(result.Data);
+    }
+
     [HttpPost]
     [Authorize(Roles = "Company")]
     public async Task<IActionResult> Create([FromBody] CreateCompanyProfileRequest request)

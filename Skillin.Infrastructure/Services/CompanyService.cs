@@ -81,6 +81,22 @@ public class CompanyService
         return (true, "Profile updated.", MapToResponse(profile));
     }
 
+    public async Task<(bool Success, string Message, CompanyProfileResponse? Data)> UpdateByUserIdAsync(Guid userId, UpdateCompanyProfileRequest request)
+    {
+        var profile = await _context.CompanyProfiles
+            .Include(c => c.User)
+            .FirstOrDefaultAsync(c => c.UserId == userId);
+
+        if (profile is null) return (false, "Profile not found.", null);
+
+        profile.CompanyName = request.CompanyName;
+        profile.Description = request.Description;
+        profile.Website = request.Website;
+
+        await _context.SaveChangesAsync();
+        return (true, "Profile updated.", MapToResponse(profile));
+    }
+
     public async Task<(bool Success, string Message)> DeleteAsync(Guid id, Guid userId)
     {
         var profile = await _context.CompanyProfiles.FindAsync(id);
