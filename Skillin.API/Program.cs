@@ -128,6 +128,11 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 
+// Ensure uploads directory exists and serve static files (CVs)
+var uploadsPath = Path.Combine(app.Environment.WebRootPath ?? app.Environment.ContentRootPath, "uploads", "cvs");
+Directory.CreateDirectory(uploadsPath);
+app.UseStaticFiles();
+
 app.UseCors("AllowReact");
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseAuthentication();

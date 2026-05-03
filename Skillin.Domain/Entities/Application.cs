@@ -8,6 +8,7 @@ public class JobApplication
     public Guid ListingId { get; set; }
     public Guid StudentProfileId { get; set; }
     public string CoverLetter { get; set; } = string.Empty;
+    public string CvPath { get; set; } = string.Empty;
     public ApplicationStatus Status { get; set; } = ApplicationStatus.Pending;
     public DateTime AppliedAt { get; set; } = DateTime.UtcNow;
 

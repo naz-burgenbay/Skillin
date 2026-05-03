@@ -16,12 +16,17 @@ const COLORS = [
 const Listings = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const role = localStorage.getItem('role');
   const [listings, setListings] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (role === 'Company') {
+      navigate('/my-listings', { replace: true });
+      return;
+    }
     getAllListings()
       .then(res => { setListings(res.data); setFiltered(res.data); })
       .catch(console.error)
@@ -32,7 +37,7 @@ const Listings = () => {
     const q = search.toLowerCase();
     setFiltered(listings.filter(l =>
       l.title?.toLowerCase().includes(q) ||
-      l.position?.toLowerCase().includes(q) ||
+      l.type?.toLowerCase().includes(q) ||
       l.location?.toLowerCase().includes(q)
     ));
   }, [search, listings]);
@@ -112,7 +117,7 @@ const Listings = () => {
                       color: 'white', padding: '4px 14px',
                       borderRadius: 100, fontSize: 12, fontWeight: 600,
                     }}>
-                      {listing.position || 'Internship'}
+                      {listing.type || 'Internship'}
                     </span>
                   </div>
                 </div>
@@ -137,7 +142,9 @@ const Listings = () => {
                     background: COLORS[i % COLORS.length],
                     border: 'none', borderRadius: 10,
                     color: 'white', fontSize: 14, fontWeight: 700, cursor: 'pointer'
-                  }}>
+                  }}
+                    onClick={() => navigate(`/listings/${listing.id}`)}
+                  >
                     View & Apply
                   </button>
                 </div>

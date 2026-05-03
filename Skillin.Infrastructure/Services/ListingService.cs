@@ -52,6 +52,22 @@ public class ListingService
             .ToListAsync();
     }
 
+    public async Task<List<ListingResponse>> GetByCurrentUserAsync(Guid userId)
+    {
+        var company = await _context.CompanyProfiles
+            .FirstOrDefaultAsync(c => c.UserId == userId);
+
+        if (company is null) return new List<ListingResponse>();
+
+        return await _context.Listings
+            .Include(l => l.CompanyProfile)
+            .Include(l => l.Applications)
+            .Where(l => l.CompanyProfileId == company.Id)
+            .OrderByDescending(l => l.CreatedAt)
+            .Select(l => MapToResponse(l))
+            .ToListAsync();
+    }
+
     public async Task<(bool Success, string Message, ListingResponse? Data)> CreateAsync(Guid userId, CreateListingRequest request)
     {
         var company = await _context.CompanyProfiles
@@ -65,7 +81,10 @@ public class ListingService
             CompanyProfileId = company.Id,
             Title = request.Title,
             Description = request.Description,
-            Location = request.Location
+            Requirements = request.Requirements,
+            Location = request.Location,
+            Type = request.Type,
+            Duration = request.Duration
         };
 
         _context.Listings.Add(listing);
@@ -91,7 +110,10 @@ public class ListingService
 
         listing.Title = request.Title;
         listing.Description = request.Description;
+        listing.Requirements = request.Requirements;
         listing.Location = request.Location;
+        listing.Type = request.Type;
+        listing.Duration = request.Duration;
         listing.IsActive = request.IsActive;
 
         await _context.SaveChangesAsync();
@@ -119,7 +141,10 @@ public class ListingService
         CompanyName = l.CompanyProfile?.CompanyName ?? "",
         Title = l.Title,
         Description = l.Description,
+        Requirements = l.Requirements,
         Location = l.Location,
+        Type = l.Type,
+        Duration = l.Duration,
         IsActive = l.IsActive,
         CreatedAt = l.CreatedAt,
         ApplicationCount = l.Applications?.Count ?? 0
