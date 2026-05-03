@@ -52,7 +52,7 @@ const Applications = () => {
           <div style={{ background: 'white', borderRadius: 24, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.06)', border: '1px solid #f1f5f9' }}>
             {/* Table header */}
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1fr 1fr', padding: '16px 28px', background: '#f8faff', borderBottom: '1px solid #f1f5f9' }}>
-              {['Student', 'Listing', 'Position', 'Date', 'Status'].map(h => (
+              {['Student', 'Listing', 'CV', 'Date', 'Status'].map(h => (
                 <span key={h} style={{ fontSize: 12, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</span>
               ))}
             </div>
@@ -63,8 +63,10 @@ const Applications = () => {
                 display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1fr 1fr',
                 padding: '20px 28px', alignItems: 'center',
                 borderBottom: i < applications.length - 1 ? '1px solid #f9fafb' : 'none',
-                transition: 'background 0.15s'
+                transition: 'background 0.15s',
+                cursor: 'pointer',
               }}
+                onClick={() => navigate(`/applications/${app.id}`, { state: { application: app } })}
                 onMouseEnter={e => e.currentTarget.style.background = '#f8faff'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
@@ -80,7 +82,10 @@ const Applications = () => {
                   {app.listingTitle || app.listing?.title || 'Listing'}
                 </div>
                 <div style={{ fontSize: 13, color: '#6b7280' }}>
-                  {app.position || app.listing?.position || '—'}
+                  {app.cvUrl
+                    ? <a href={`http://localhost:22792${app.cvUrl}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#4f46e5', fontWeight: 600, textDecoration: 'none', fontSize: 13 }}>📎 View CV</a>
+                    : <span style={{ color: '#d1d5db' }}>—</span>
+                  }
                 </div>
                 <div style={{ fontSize: 13, color: '#9ca3af' }}>
                   {new Date(app.appliedAt || app.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}

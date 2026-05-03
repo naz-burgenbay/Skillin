@@ -11,10 +11,12 @@ namespace Skillin.Controllers;
 public class ApplicationsController : ControllerBase
 {
     private readonly ApplicationService _applicationService;
+    private readonly IWebHostEnvironment _env;
 
-    public ApplicationsController(ApplicationService applicationService)
+    public ApplicationsController(ApplicationService applicationService, IWebHostEnvironment env)
     {
         _applicationService = applicationService;
+        _env = env;
     }
 
     private Guid GetUserId() =>
@@ -46,9 +48,70 @@ public class ApplicationsController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Student")]
-    public async Task<IActionResult> Apply([FromBody] CreateApplicationRequest request)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> Apply([FromForm] Guid listingId, [FromForm] string coverLetter, IFormFile? cv)
     {
-        var result = await _applicationService.ApplyAsync(GetUserId(), request);
+        string? cvPath = null;
+
+        if (cv != null)
+        {
+            var allowed = new[] { ".pdf", ".doc", ".docx" };
+            var ext = Path.GetExtension(cv.FileName).ToLowerInvariant();
+            if (!allowed.Contains(ext))
+                return BadRequest(new { message = "CV must be a PDF, DOC, or DOCX file." });
+
+            if (cv.Length > 10 * 1024 * 1024)
+                return BadRequest(new { message = "CV file must be smaller than 10 MB." });
+
+            var uploadsDir = Path.Combine(_env.WebRootPath ?? _env.ContentRootPath, "uploads", "cvs");
+            Directory.CreateDirectory(uploadsDir);
+
+            var fileName = $"{Guid.NewGuid()}{ext}";
+            var filePath = Path.Combine(uploadsDir, fileName);
+
+            using var stream = System.IO.File.Create(filePath);
+            await cv.CopyToAsync(stream);
+
+            cvPath = Path.Combine("uploads", "cvs", fileName);
+        }
+
+        var request = new CreateApplicationRequest { ListingId = listingId, CoverLetter = coverLetter ?? string.Empty };
+        var result = await _applicationService.ApplyAsync(GetUserId(), request, cvPath);
+        if (!result.Success) return BadRequest(new { message = result.Message });
+        return Ok(result.Data);
+    }
+
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Student")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> Update(Guid id, [FromForm] string coverLetter, IFormFile? cv)
+    {
+        string? cvPath = null;
+
+        if (cv != null)
+        {
+            var allowed = new[] { ".pdf", ".doc", ".docx" };
+            var ext = Path.GetExtension(cv.FileName).ToLowerInvariant();
+            if (!allowed.Contains(ext))
+                return BadRequest(new { message = "CV must be a PDF, DOC, or DOCX file." });
+
+            if (cv.Length > 10 * 1024 * 1024)
+                return BadRequest(new { message = "CV file must be smaller than 10 MB." });
+
+            var uploadsDir = Path.Combine(_env.WebRootPath ?? _env.ContentRootPath, "uploads", "cvs");
+            Directory.CreateDirectory(uploadsDir);
+
+            var fileName = $"{Guid.NewGuid()}{ext}";
+            var filePath = Path.Combine(uploadsDir, fileName);
+
+            using var stream = System.IO.File.Create(filePath);
+            await cv.CopyToAsync(stream);
+
+            cvPath = Path.Combine("uploads", "cvs", fileName);
+        }
+
+        var request = new UpdateApplicationRequest { CoverLetter = coverLetter ?? string.Empty };
+        var result = await _applicationService.UpdateAsync(id, GetUserId(), request, cvPath);
         if (!result.Success) return BadRequest(new { message = result.Message });
         return Ok(result.Data);
     }

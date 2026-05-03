@@ -27,6 +27,14 @@ public class ListingsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("mine")]
+    [Authorize(Roles = "Company")]
+    public async Task<IActionResult> GetMine()
+    {
+        var result = await _listingService.GetByCurrentUserAsync(GetUserId());
+        return Ok(result);
+    }
+
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {

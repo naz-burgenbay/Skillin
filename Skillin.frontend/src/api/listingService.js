@@ -8,3 +8,6 @@ export const getListingById = (id) =>
 
 export const createListing = (data) =>
   axiosInstance.post('/listings', data);
+
+export const getMyListings = () =>
+  axiosInstance.get('/listings/mine');

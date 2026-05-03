@@ -71,7 +71,7 @@ public class ApplicationService : IApplicationService
             .ToListAsync();
     }
 
-    public async Task<(bool Success, string Message, ApplicationResponse? Data)> ApplyAsync(Guid userId, CreateApplicationRequest request)
+    public async Task<(bool Success, string Message, ApplicationResponse? Data)> ApplyAsync(Guid userId, CreateApplicationRequest request, string? cvPath = null)
     {
         var student = await _context.StudentProfiles
             .FirstOrDefaultAsync(s => s.UserId == userId);
@@ -96,7 +96,8 @@ public class ApplicationService : IApplicationService
         {
             ListingId = request.ListingId,
             StudentProfileId = student.Id,
-            CoverLetter = request.CoverLetter
+            CoverLetter = request.CoverLetter,
+            CvPath = cvPath ?? string.Empty
         };
 
         _context.Applications.Add(application);
@@ -127,6 +128,27 @@ public class ApplicationService : IApplicationService
         return (true, "Status updated.", MapToResponse(application));
     }
 
+    public async Task<(bool Success, string Message, ApplicationResponse? Data)> UpdateAsync(Guid id, Guid userId, UpdateApplicationRequest request, string? cvPath = null)
+    {
+        var student = await _context.StudentProfiles
+            .FirstOrDefaultAsync(s => s.UserId == userId);
+
+        if (student is null) return (false, "Student profile not found.", null);
+
+        var application = await _context.Applications
+            .Include(a => a.Listing).ThenInclude(l => l.CompanyProfile)
+            .Include(a => a.StudentProfile).ThenInclude(s => s.User)
+            .FirstOrDefaultAsync(a => a.Id == id && a.StudentProfileId == student.Id);
+
+        if (application is null) return (false, "Application not found.", null);
+
+        application.CoverLetter = request.CoverLetter;
+        if (cvPath != null) application.CvPath = cvPath;
+
+        await _context.SaveChangesAsync();
+        return (true, "Application updated.", MapToResponse(application));
+    }
+
     public async Task<(bool Success, string Message)> WithdrawAsync(Guid id, Guid userId)
     {
         var student = await _context.StudentProfiles
@@ -153,6 +175,7 @@ public class ApplicationService : IApplicationService
         StudentName = a.StudentProfile?.FullName ?? "",
         StudentEmail = a.StudentProfile?.User?.Email ?? "",
         CoverLetter = a.CoverLetter,
+        CvUrl = string.IsNullOrEmpty(a.CvPath) ? string.Empty : "/" + a.CvPath.Replace("\\", "/"),
         Status = a.Status.ToString(),
         AppliedAt = a.AppliedAt
     };

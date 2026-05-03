@@ -1,7 +1,7 @@
 import axiosInstance from './axiosInstance';
 
-export const applyToListing = (listingId) =>
-  axiosInstance.post('/applications', { listingId });
+export const applyToListing = (listingId, coverLetter = '') =>
+  axiosInstance.post('/applications', { listingId, coverLetter });
 
 export const getMyApplications = () =>
   axiosInstance.get('/applications/my');
