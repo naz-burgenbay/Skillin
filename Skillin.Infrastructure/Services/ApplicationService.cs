@@ -25,7 +25,7 @@ public class ApplicationService : IApplicationService
 
         return await _context.Applications
             .Include(a => a.Listing).ThenInclude(l => l.CompanyProfile)
-            .Include(a => a.StudentProfile)
+            .Include(a => a.StudentProfile).ThenInclude(s => s.User)
             .Where(a => a.StudentProfileId == student.Id)
             .OrderByDescending(a => a.AppliedAt)
             .Select(a => MapToResponse(a))
@@ -43,14 +43,35 @@ public class ApplicationService : IApplicationService
 
         return await _context.Applications
             .Include(a => a.Listing).ThenInclude(l => l.CompanyProfile)
-            .Include(a => a.StudentProfile)
+            .Include(a => a.StudentProfile).ThenInclude(s => s.User)
             .Where(a => a.ListingId == listingId)
             .OrderByDescending(a => a.AppliedAt)
             .Select(a => MapToResponse(a))
             .ToListAsync();
     }
 
-    public async Task<(bool Success, string Message, ApplicationResponse? Data)> ApplyAsync(Guid userId, CreateApplicationRequest request)
+    public async Task<List<ApplicationResponse>> GetByCompanyAsync(Guid userId)
+    {
+        var company = await _context.CompanyProfiles
+            .FirstOrDefaultAsync(c => c.UserId == userId);
+
+        if (company is null) return new List<ApplicationResponse>();
+
+        var listingIds = await _context.Listings
+            .Where(l => l.CompanyProfileId == company.Id)
+            .Select(l => l.Id)
+            .ToListAsync();
+
+        return await _context.Applications
+            .Include(a => a.Listing).ThenInclude(l => l.CompanyProfile)
+            .Include(a => a.StudentProfile).ThenInclude(s => s.User)
+            .Where(a => listingIds.Contains(a.ListingId))
+            .OrderByDescending(a => a.AppliedAt)
+            .Select(a => MapToResponse(a))
+            .ToListAsync();
+    }
+
+    public async Task<(bool Success, string Message, ApplicationResponse? Data)> ApplyAsync(Guid userId, CreateApplicationRequest request, string? cvPath = null)
     {
         var student = await _context.StudentProfiles
             .FirstOrDefaultAsync(s => s.UserId == userId);
@@ -75,7 +96,8 @@ public class ApplicationService : IApplicationService
         {
             ListingId = request.ListingId,
             StudentProfileId = student.Id,
-            CoverLetter = request.CoverLetter
+            CoverLetter = request.CoverLetter,
+            CvPath = cvPath ?? string.Empty
         };
 
         _context.Applications.Add(application);
@@ -83,7 +105,7 @@ public class ApplicationService : IApplicationService
 
         var created = await _context.Applications
             .Include(a => a.Listing).ThenInclude(l => l.CompanyProfile)
-            .Include(a => a.StudentProfile)
+            .Include(a => a.StudentProfile).ThenInclude(s => s.User)
             .FirstAsync(a => a.Id == application.Id);
 
         return (true, "Application submitted.", MapToResponse(created));
@@ -93,7 +115,7 @@ public class ApplicationService : IApplicationService
     {
         var application = await _context.Applications
             .Include(a => a.Listing).ThenInclude(l => l.CompanyProfile)
-            .Include(a => a.StudentProfile)
+            .Include(a => a.StudentProfile).ThenInclude(s => s.User)
             .FirstOrDefaultAsync(a => a.Id == id);
 
         if (application is null) return (false, "Application not found.", null);
@@ -104,6 +126,27 @@ public class ApplicationService : IApplicationService
         await _context.SaveChangesAsync();
 
         return (true, "Status updated.", MapToResponse(application));
+    }
+
+    public async Task<(bool Success, string Message, ApplicationResponse? Data)> UpdateAsync(Guid id, Guid userId, UpdateApplicationRequest request, string? cvPath = null)
+    {
+        var student = await _context.StudentProfiles
+            .FirstOrDefaultAsync(s => s.UserId == userId);
+
+        if (student is null) return (false, "Student profile not found.", null);
+
+        var application = await _context.Applications
+            .Include(a => a.Listing).ThenInclude(l => l.CompanyProfile)
+            .Include(a => a.StudentProfile).ThenInclude(s => s.User)
+            .FirstOrDefaultAsync(a => a.Id == id && a.StudentProfileId == student.Id);
+
+        if (application is null) return (false, "Application not found.", null);
+
+        application.CoverLetter = request.CoverLetter;
+        if (cvPath != null) application.CvPath = cvPath;
+
+        await _context.SaveChangesAsync();
+        return (true, "Application updated.", MapToResponse(application));
     }
 
     public async Task<(bool Success, string Message)> WithdrawAsync(Guid id, Guid userId)
@@ -130,7 +173,9 @@ public class ApplicationService : IApplicationService
         CompanyName = a.Listing?.CompanyProfile?.CompanyName ?? "",
         StudentProfileId = a.StudentProfileId,
         StudentName = a.StudentProfile?.FullName ?? "",
+        StudentEmail = a.StudentProfile?.User?.Email ?? "",
         CoverLetter = a.CoverLetter,
+        CvUrl = string.IsNullOrEmpty(a.CvPath) ? string.Empty : "/" + a.CvPath.Replace("\\", "/"),
         Status = a.Status.ToString(),
         AppliedAt = a.AppliedAt
     };

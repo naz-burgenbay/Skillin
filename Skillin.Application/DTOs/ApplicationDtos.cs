@@ -14,6 +14,11 @@ public class UpdateApplicationStatusRequest
     public ApplicationStatus Status { get; set; }
 }
 
+public class UpdateApplicationRequest
+{
+    public string CoverLetter { get; set; } = string.Empty;
+}
+
 public class ApplicationResponse
 {
     public Guid Id { get; set; }
@@ -22,7 +27,9 @@ public class ApplicationResponse
     public string CompanyName { get; set; } = string.Empty;
     public Guid StudentProfileId { get; set; }
     public string StudentName { get; set; } = string.Empty;
+    public string StudentEmail { get; set; } = string.Empty;
     public string CoverLetter { get; set; } = string.Empty;
+    public string CvUrl { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public DateTime AppliedAt { get; set; }
 }

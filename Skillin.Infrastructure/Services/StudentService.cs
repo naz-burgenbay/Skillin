@@ -81,6 +81,23 @@ public class StudentService
         return (true, "Profile updated.", MapToResponse(profile));
     }
 
+    public async Task<(bool Success, string Message, StudentProfileResponse? Data)> UpdateByUserIdAsync(Guid userId, UpdateStudentProfileRequest request)
+    {
+        var profile = await _context.StudentProfiles
+            .Include(s => s.User)
+            .FirstOrDefaultAsync(s => s.UserId == userId);
+
+        if (profile is null) return (false, "Profile not found.", null);
+
+        profile.FullName = request.FullName;
+        profile.Bio = request.Bio;
+        profile.Skills = request.Skills;
+        profile.UniversityName = request.UniversityName;
+
+        await _context.SaveChangesAsync();
+        return (true, "Profile updated.", MapToResponse(profile));
+    }
+
     public async Task<(bool Success, string Message)> DeleteAsync(Guid id, Guid userId)
     {
         var profile = await _context.StudentProfiles.FindAsync(id);
