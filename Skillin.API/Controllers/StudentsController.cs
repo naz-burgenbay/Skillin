@@ -44,6 +44,15 @@ public class StudentsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPut("me")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> UpdateMine([FromBody] UpdateStudentProfileRequest request)
+    {
+        var result = await _studentService.UpdateByUserIdAsync(GetUserId(), request);
+        if (!result.Success) return BadRequest(new { message = result.Message });
+        return Ok(result.Data);
+    }
+
     [HttpPost]
     [Authorize(Roles = "Student")]
     public async Task<IActionResult> Create([FromBody] CreateStudentProfileRequest request)
