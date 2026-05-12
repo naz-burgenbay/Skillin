@@ -192,3 +192,36 @@ output "storage_account_name" {
 output "storage_container_name" {
   value = azurerm_storage_container.uploads.name
 }
+
+
+# ==================== FRONTEND APP SERVICE ====================
+resource "azurerm_service_plan" "frontend_plan" {
+  name                = "skillin-frontend-plan"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  os_type             = "Linux"
+  sku_name            = "B1"
+}
+
+resource "azurerm_linux_web_app" "frontend_app" {
+  name                = "skillin-frontend"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  service_plan_id     = azurerm_service_plan.frontend_plan.id
+
+  site_config {
+    application_stack {
+      node_version = "20-lts"
+    }
+    always_on = false
+  }
+
+  app_settings = {
+    "VITE_API_URL"                   = "https://skillin-backend.azurewebsites.net"
+    "SCM_DO_BUILD_DURING_DEPLOYMENT" = "false"
+  }
+}
+
+output "frontend_app_url" {
+  value = "https://${azurerm_linux_web_app.frontend_app.name}.azurewebsites.net"
+}
