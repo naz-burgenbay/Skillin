@@ -1,0 +1,36 @@
+name: Build and deploy Frontend to Azure Web App - skillin-frontend
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./Skillin.frontend
+
+      - name: Build
+        run: npm run build
+        working-directory: ./Skillin.frontend
+        env:
+          VITE_API_URL: https://skillin-backend.azurewebsites.net
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'skillin-frontend'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_FRONTEND }}
+          package: ./Skillin.frontend/dist
