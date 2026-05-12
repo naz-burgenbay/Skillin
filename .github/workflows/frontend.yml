@@ -16,18 +16,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
 
       - name: Install dependencies
         run: npm ci
         working-directory: ./Skillin.frontend
 
       - name: Build Vite
-        run: npm run build
-        working-directory: ./Skillin.frontend
         run: npm run build
         working-directory: ./Skillin.frontend
 
