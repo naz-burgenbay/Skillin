@@ -19,7 +19,7 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-        working-directory: ./Skillin.frontend   # ← если папка называется иначе — поменяй
+        working-directory: ./Skillin.frontend
 
       - name: Build Vite
         run: npm run build
