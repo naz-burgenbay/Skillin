@@ -1,9 +1,8 @@
-name: Build and deploy Frontend to Azure Web App - skillin-frontend
+name: Build and deploy Frontend to Azure Web App
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -17,6 +16,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: Skillin.frontend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -25,12 +26,10 @@ jobs:
       - name: Build
         run: npm run build
         working-directory: ./Skillin.frontend
-        env:
-          VITE_API_URL: https://skillin-backend.azurewebsites.net
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'skillin-frontend'
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_FRONTEND }}
+          publish-profile: ${{ secrets.AZURE_FRONTEND_PUBLISH_PROFILE }}
           package: ./Skillin.frontend/dist
