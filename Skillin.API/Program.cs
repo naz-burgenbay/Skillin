@@ -95,8 +95,8 @@ builder.Services.AddControllers();
 var app = builder.Build();
 
 // ── Auto migration ────────────────────────────────────
-using (var scope = app.Services.CreateScope())
-{
+//using (var scope = app.Services.CreateScope())
+//{
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var connection = db.Database.GetDbConnection();
     connection.Open();
@@ -122,7 +122,7 @@ using (var scope = app.Services.CreateScope())
 
     connection.Close();
     db.Database.Migrate(); // applies all pending migrations; creates schema from scratch if history is empty
-}
+//}
 
 // ── Pipeline ──────────────────────────────────────────
 app.UseSwagger();
