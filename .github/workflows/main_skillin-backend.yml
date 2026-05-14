@@ -1,0 +1,37 @@
+name: Build and deploy ASP.Net Core app to Azure Web App - skillin-backend
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+
+      - name: Restore
+        run: dotnet restore
+        working-directory: ./Skillin.API
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+        working-directory: ./Skillin.API
+
+      - name: Publish
+        run: dotnet publish -c Release -o ./published --no-restore
+        working-directory: ./Skillin.API
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'skillin-backend'
+          publish-profile: ${{ secrets.AZURE_BACKEND_PUBLISH_PROFILE }}
+          package: ./published
