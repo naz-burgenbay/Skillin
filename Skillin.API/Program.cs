@@ -101,9 +101,9 @@ using (var scope = app.Services.CreateScope())
     var connection = db.Database.GetDbConnection();
     connection.Open();
 
-     Ensure __EFMigrationsHistory exists so Migrate() doesn't try to CREATE DATABASE.
-     This is needed when the DB was created outside EF (e.g. SQL Server already had it)
-     and the connection user lacks VIEW ANY DATABASE on master.
+     //Ensure __EFMigrationsHistory exists so Migrate() doesn't try to CREATE DATABASE.
+     //This is needed when the DB was created outside EF (e.g. SQL Server already had it)
+     //and the connection user lacks VIEW ANY DATABASE on master.
     using (var cmd = connection.CreateCommand())
     {
         cmd.CommandText = @"
