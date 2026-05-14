@@ -97,31 +97,31 @@ var app = builder.Build();
 // ── Auto migration ────────────────────────────────────
 //using (var scope = app.Services.CreateScope())
 //{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    var connection = db.Database.GetDbConnection();
+    //var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    //var connection = db.Database.GetDbConnection();
     connection.Open();
 
     // Ensure __EFMigrationsHistory exists so Migrate() doesn't try to CREATE DATABASE.
     // This is needed when the DB was created outside EF (e.g. SQL Server already had it)
     // and the connection user lacks VIEW ANY DATABASE on master.
-    using (var cmd = connection.CreateCommand())
-    {
-        cmd.CommandText = @"
-            IF NOT EXISTS (
-                SELECT 1 FROM sys.objects
-                WHERE object_id = OBJECT_ID(N'[dbo].[__EFMigrationsHistory]')
-                  AND type = 'U'
-            )
-            CREATE TABLE [dbo].[__EFMigrationsHistory] (
-                [MigrationId]    nvarchar(150) NOT NULL,
-                [ProductVersion] nvarchar(32)  NOT NULL,
-                CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
-            );";
-        cmd.ExecuteNonQuery();
-    }
+    //using (var cmd = connection.CreateCommand())
+    //{
+        //cmd.CommandText = @"
+            //IF NOT EXISTS (
+                //SELECT 1 FROM sys.objects
+                //WHERE object_id = OBJECT_ID(N'[dbo].[__EFMigrationsHistory]')
+                //  AND type = 'U'
+            //)
+            //CREATE TABLE [dbo].[__EFMigrationsHistory] (
+                //[MigrationId]    nvarchar(150) NOT NULL,
+                //[ProductVersion] nvarchar(32)  NOT NULL,
+                //CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+            //);";
+        //cmd.ExecuteNonQuery();
+    //}
 
-    connection.Close();
-    db.Database.Migrate(); // applies all pending migrations; creates schema from scratch if history is empty
+    //connection.Close();
+    //db.Database.Migrate(); // applies all pending migrations; creates schema from scratch if history is empty
 //}
 
 // ── Pipeline ──────────────────────────────────────────
