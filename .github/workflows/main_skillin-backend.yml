@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,15 +17,15 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      - name: Restore
-        run: dotnet restore Skillin.API/Skillin.API.csproj
-
       - name: Publish
-        run: dotnet publish Skillin.API/Skillin.API.csproj -c Release -o ./published
+        run: dotnet publish ./Skillin.API/Skillin.API.csproj -c Release -o ./published
+
+      - name: Zip publish folder
+        run: zip -r ./app.zip ./published/*
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'skillin-backend'
           publish-profile: ${{ secrets.AZURE_BACKEND_PUBLISH_PROFILE }}
-          package: ./published
+          package: ./app.zip
