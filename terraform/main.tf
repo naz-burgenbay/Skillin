@@ -119,7 +119,8 @@ resource "azurerm_linux_web_app" "backend_app" {
     application_stack {
       dotnet_version = "8.0"
     }
-    always_on = false
+    always_on        = true
+    app_command_line = "dotnet Skillin.API.dll"
   }
 
     app_settings = {
@@ -211,10 +212,10 @@ resource "azurerm_linux_web_app" "frontend_app" {
 
   site_config {
     application_stack {
-      node_version = "20-lts"
+      node_version = "22-lts"
     }
     always_on        = false
-    startup_command  = "npx serve -s dist"
+    app_command_line = "npx serve -s /home/site/wwwroot/dist -l 8080"
   }
 
   app_settings = {
