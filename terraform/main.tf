@@ -213,12 +213,13 @@ resource "azurerm_linux_web_app" "frontend_app" {
     application_stack {
       node_version = "20-lts"
     }
-    always_on = false
+    always_on        = false
+    startup_command  = "npx serve -s dist"
   }
 
   app_settings = {
     "VITE_API_URL"                   = "https://skillin-backend.azurewebsites.net"
-    "SCM_DO_BUILD_DURING_DEPLOYMENT" = "false"
+    "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
   }
 }
 
